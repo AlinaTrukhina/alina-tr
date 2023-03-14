@@ -24,11 +24,12 @@ process.on('SIGINT', () => {
 
 const WebSocketServer = require('ws').Server;
 
-const wss = new WebSocketServer({server: server});
+const wss = new WebSocketServer({ server: server });
 
 wss.on('connection', function connection(ws) {
     // when someone connects to a server, log it
     const numClients = wss.clients.size;
+    
     console.log('clients connected: ', numClients);
 
     // broadcast sends everyone a message at once
