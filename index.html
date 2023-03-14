@@ -12,14 +12,11 @@
     </h1>
     <script>
         let ws;
-        try {
         // Choose correct websocket proto
         const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
         ws = new WebSocket(`${proto}://${window.location.host}`);
         
-        } catch(e) {
-        // 
-        }
+
 
         ws.onmessage = (event) => {console.log(event.data)};
 
