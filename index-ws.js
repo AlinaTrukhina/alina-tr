@@ -1,87 +1,89 @@
 const express = require('express');
 const server = require('http').createServer();
 const app = express();
-const PORT = 3001;
 
 app.get('/', function(req, res) {
-    res.sendFile('index.html', {root: __dirname});
+  res.sendFile('index.html', {root: __dirname});
 });
 
 server.on('request', app);
-server.listen(3001, function () { console.log(`Listening on 3001`); });
 
 process.on('SIGINT', () => {
-    console.log('sigint');
-    wss.clients.forEach(function each(client) {
-        client.close;
-    })
-    server.close(() => {
-        shutdownDB();
-    })
+  server.close(() => {
+    shutdownDB(); 
+  });
 });
 
-/** Begin websocket **/
+server.listen(3000, function () { console.log('Listening on 3000'); });
 
+/** Websocket **/
 const WebSocketServer = require('ws').Server;
 
 const wss = new WebSocketServer({ server: server });
 
 wss.on('connection', function connection(ws) {
-    // when someone connects to a server, log it
-    const numClients = wss.clients.size;
+  const numClients = wss.clients.size;
 
-    console.log('clients connected: ', numClients);
+  console.log('clients connected: ', numClients);
 
-    // broadcast sends everyone a message at once
-    wss.broadcast(`current visitors: ${numClients}`);
+  // Log number of visitors at current moment
+  db.run(`INSERT INTO visitors (count, time)
+    VALUES (${numClients}, datetime('now'))`);
 
-    // when connection opens
-    if (ws.readyState === ws.OPEN) {
-        ws.send('welcome to my server');
-    }
+  wss.broadcast(`Current visitors: ${numClients}`);
 
-    db.run(`INSERT INTO visitors (count, time)
-            VALUES (${numClients}, datetime('now'))`)
+  if (ws.readyState === ws.OPEN) {
+    ws.send('welcome!');
+  }
 
-    // when connection closes
-    ws.on('close', function close() {
-        wss.broadcast(`Current visitors: ${numClients}`);
-        console.log('a client has disconnected');
-    })
+  ws.on('close', function close() {
+    wss.broadcast(`Current visitors: ${wss.clients.size}`);
+    console.log('A client has disconnected');
+  });
+
+  ws.on('error', function error() {
+ 
+  });
 });
 
-// broadcast function to send each client the data
+/**
+ * Broadcast data to all connected clients
+ * @param  {Object} data
+ * @void
+ */
 wss.broadcast = function broadcast(data) {
-    wss.clients.forEach(function each(client) {
-        client.send(data);
-    })
-}
+  console.log('Broadcasting: ', data);
+  wss.clients.forEach(function each(client) {
+    client.send(data);
+  });
+};
+/** End Websocket **/
 
-/** end websockets */
-/** begin database */
+/** Database stuff **/
 
-const sqlite = require('sqlite3');
-const db = new sqlite.Database(':memory:');
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database(':memory:');
 
-// makes sure your database is up before trying to use it
+// .seralize ensures DB is set up before any queries
 db.serialize(() => {
-    db.run(`
-        CREATE TABLE visitors (
-            count INTEGER,
-            time TEXT
-        )
-    `)
+    db.run(`CREATE TABLE visitors (
+      count INTEGER,
+      time TEXT
+      )`);
 });
 
 function getCounts() {
     db.each("SELECT * FROM visitors", (err, row) => {
-        console.log(row);
-    })
+      console.log(row);
+    });
 }
 
-// close connection to your database
 function shutdownDB() {
-    getCounts();
-    console.log('shutting down db');
-    db.close();
+  getCounts();
+  console.log('shutting down DB');
+  db.close();
 }
+
+
+
+/** End Database stuff **/
