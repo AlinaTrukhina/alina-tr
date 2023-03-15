@@ -1,3 +1,5 @@
+// example for creating a server
+
 const http = require("http");
 http.createServer(function (req, res) {
  res.write("On the way to being a full stack engineer!");
